@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WatchTogether</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d12;--surface:#16161f;--surface2:#1e1e2a;
+  --accent:#7c5cfc;--accent2:#e040fb;
+  --text:#f0eeff;--muted:#777;--border:rgba(124,92,252,0.2);
+  --input-bg:rgba(255,255,255,0.05);--input-border:rgba(255,255,255,0.12);
+}
+body{font-family:'Mulish',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── SCREENS ── */
+.screen{display:none;min-height:100vh}
+.screen.active{display:flex;flex-direction:column}
+
+/* ── NAV ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.8rem;background:rgba(13,13,18,.92);border-bottom:.5px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.logo{font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer}
+.btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:50px;padding:.5rem 1.2rem;font-family:'Mulish',sans-serif;font-weight:700;font-size:.83rem;cursor:pointer;transition:opacity .2s,transform .15s}
+.btn:hover{opacity:.85;transform:scale(1.03)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-outline{background:transparent;border:.5px solid rgba(255,255,255,.18);color:var(--text)}
+.btn-outline:hover{border-color:var(--accent);background:rgba(124,92,252,.08)}
+.btn-sm{padding:.4rem .9rem;font-size:.78rem}
+
+/* ── LANDING ── */
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 1.5rem;position:relative;overflow:hidden}
+.hero-glow{position:absolute;top:-100px;left:50%;transform:translateX(-50%);width:600px;height:500px;background:radial-gradient(ellipse,rgba(124,92,252,.22) 0%,transparent 70%);pointer-events:none}
+.badge{display:inline-flex;align-items:center;gap:6px;background:rgba(124,92,252,.12);border:.5px solid rgba(124,92,252,.35);color:#c4b0ff;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:50px;padding:.3rem .9rem;margin-bottom:1.6rem}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+h1{font-family:'Unbounded',sans-serif;font-size:clamp(1.8rem,5vw,3.4rem);font-weight:900;line-height:1.1;letter-spacing:-.03em;margin-bottom:1rem;max-width:700px}
+h1 span{background:linear-gradient(120deg,var(--accent),var(--accent2) 50%,#00e5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{color:var(--muted);font-size:1rem;max-width:480px;margin:0 auto 2.2rem;line-height:1.7}
+.hero-btns{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center}
+
+/* ── ROOMS LIST ── */
+.rooms-section{max-width:900px;width:100%;margin:3rem auto;padding:0 1.5rem}
+.sec-title{font-family:'Unbounded',sans-serif;font-size:.85rem;font-weight:900;margin-bottom:1rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.rooms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.9rem}
+.room-card{background:var(--surface);border:.5px solid var(--border);border-radius:14px;padding:1.1rem;cursor:pointer;transition:border-color .2s,transform .2s}
+.room-card:hover{border-color:rgba(124,92,252,.5);transform:translateY(-2px)}
+.rc-name{font-family:'Unbounded',sans-serif;font-size:.82rem;font-weight:900;margin-bottom:.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-meta{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:8px}
+.rc-dot{width:7px;height:7px;border-radius:50%;background:#43a047;flex-shrink:0}
+.empty-rooms{text-align:center;color:var(--muted);font-size:.88rem;padding:2rem 0}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity .25s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:.5px solid var(--border);border-radius:20px;padding:2rem;width:100%;max-width:400px;transform:translateY(20px);transition:transform .25s}
+.modal-overlay.open .modal{transform:none}
+.modal-title{font-family:'Unbounded',sans-serif;font-size:1.1rem;font-weight:900;margin-bottom:.3rem}
+.modal-sub{font-size:.83rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.5}
+.form-group{margin-bottom:.9rem}
+.form-label{display:block;font-size:.72rem;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.35rem}
+.form-input{width:100%;background:var(--input-bg);border:.5px solid var(--input-border);border-radius:10px;padding:.65rem .9rem;font-family:'Mulish',sans-serif;font-size:.9rem;color:var(--text);outline:none;transition:border-color .2s}
+.form-input:focus{border-color:rgba(124,92,252,.6)}
+.form-input::placeholder{color:var(--muted)}
+.modal-footer{display:flex;gap:.6rem;margin-top:1.2rem}
+.modal-footer .btn{flex:1;justify-content:center}
+
+/* ── ROOM SCREEN ── */
+#screen-room{background:var(--bg)}
+.room-layout{flex:1;display:grid;grid-template-columns:1fr 300px;overflow:hidden;height:calc(100vh - 54px)}
+@media(max-width:680px){.room-layout{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+
+.player-area{display:flex;flex-direction:column;overflow:hidden;background:#000}
+
+/* YouTube player */
+.yt-wrap{position:relative;background:#000;aspect-ratio:16/9;max-height:65vh}
+#yt-player{width:100%;height:100%;border:none}
+.no-video{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;color:var(--muted)}
+.no-video svg{opacity:.3}
+.no-video p{font-size:.85rem}
+
+.player-controls{padding:.7rem 1rem;background:var(--surface);border-top:.5px solid var(--border);display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.ctrl-btn{background:rgba(255,255,255,.07);border:none;color:var(--text);border-radius:8px;padding:.45rem .8rem;font-family:'Mulish',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .2s}
+.ctrl-btn:hover{background:rgba(255,255,255,.14)}
+.ctrl-btn.active{background:rgba(124,92,252,.25);color:#c4b0ff}
+.time-display{font-size:.75rem;color:var(--muted);font-family:monospace;margin-left:auto}
+
+.video-input-row{padding:.6rem 1rem;background:var(--surface2);border-top:.5px solid var(--border);display:flex;gap:.5rem}
+.video-input-row input{flex:1;background:var(--input-bg);border:.5px solid var(--input-border);border-radius:8px;padding:.5rem .8rem;color:var(--text);font-family:'Mulish',sans-serif;font-size:.83rem;outline:none}
+.video-input-row input:focus{border-color:rgba(124,92,252,.5)}
+.video-input-row input::placeholder{color:var(--muted)}
+
+/* Users bar */
+.users-bar{padding:.5rem 1rem;background:var(--surface2);border-top:.5px solid var(--border);display:flex;align-items:center;gap:6px;overflow-x:auto}
+.user-chip{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.05);border-radius:50px;padding:.28rem .7rem;font-size:.72rem;font-weight:700;flex-shrink:0}
+.user-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:900;color:#fff}
+
+/* Reactions */
+.reactions-bar{padding:.4rem .8rem;display:flex;gap:.3rem;flex-wrap:wrap}
+.react-btn{background:rgba(255,255,255,.06);border:none;border-radius:8px;padding:.3rem .6rem;font-size:1rem;cursor:pointer;transition:transform .15s,background .15s}
+.react-btn:hover{transform:scale(1.25);background:rgba(255,255,255,.12)}
+
+/* Floating reactions */
+.reaction-float{position:fixed;font-size:2rem;pointer-events:none;z-index:300;animation:floatUp 2s ease-out forwards}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-120px) scale(1.4)}}
+
+/* ── CHAT ── */
+.chat-area{display:flex;flex-direction:column;background:var(--surface);border-left:.5px solid var(--border)}
+.chat-header{padding:.8rem 1rem;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.chat-title{font-family:'Unbounded',sans-serif;font-size:.72rem;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.user-count{font-size:.72rem;color:var(--accent);font-weight:700}
+.chat-messages{flex:1;overflow-y:auto;padding:.6rem .8rem;display:flex;flex-direction:column;gap:.5rem}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-track{background:transparent}
+.chat-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.chat-msg{display:flex;flex-direction:column;gap:2px;animation:msgIn .15s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.chat-msg-user{font-size:.68rem;font-weight:700}
+.chat-msg-text{font-size:.78rem;color:rgba(255,255,255,.75);line-height:1.5;word-break:break-word}
+.chat-system{font-size:.72rem;color:var(--muted);text-align:center;padding:.1rem 0;font-style:italic}
+
+.chat-input-row{padding:.6rem .8rem;border-top:.5px solid var(--border);display:flex;gap:.4rem}
+.chat-input-row input{flex:1;background:var(--input-bg);border:.5px solid var(--input-border);border-radius:8px;padding:.5rem .7rem;color:var(--text);font-family:'Mulish',sans-serif;font-size:.82rem;outline:none}
+.chat-input-row input:focus{border-color:rgba(124,92,252,.5)}
+.chat-input-row input::placeholder{color:var(--muted)}
+.send-btn{background:var(--accent);border:none;border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:opacity .2s}
+.send-btn:hover{opacity:.8}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--surface);border:.5px solid var(--border);border-radius:50px;padding:.6rem 1.2rem;font-size:.82rem;font-weight:600;z-index:400;animation:toastIn .25s ease;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- ── LANDING SCREEN ── -->
+<div class="screen active" id="screen-landing">
+  <nav>
+    <div class="logo">WatchTogether</div>
+    <div style="display:flex;gap:.5rem">
+      <button class="btn btn-outline btn-sm" onclick="openModal('join')">Войти в комнату</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('create')">+ Создать</button>
+    </div>
+  </nav>
+  <div class="hero">
+    <div class="hero-glow"></div>
+    <div class="badge"><span class="badge-dot"></span>Синхронное воспроизведение</div>
+    <h1>Смотри YouTube<br><span>вместе с друзьями</span></h1>
+    <p class="hero-sub">Создай комнату, поделись ссылкой и смотрите синхронно — пауза, плей и перемотка у всех одновременно.</p>
+    <div class="hero-btns">
+      <button class="btn btn-primary" onclick="openModal('create')">
+        <svg width="14" height="14" fill="#fff" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        Создать комнату
+      </button>
+      <button class="btn btn-outline" onclick="openModal('join')">Войти по коду</button>
+    </div>
+  </div>
+  <div class="rooms-section">
+    <div class="sec-title">Активные комнаты</div>
+    <div class="rooms-grid" id="rooms-grid">
+      <div class="empty-rooms">Загрузка комнат...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ROOM SCREEN ── -->
+<div class="screen" id="screen-room">
+  <nav>
+    <div class="logo" onclick="leaveRoom()">WatchTogether</div>
+    <div style="display:flex;align-items:center;gap:.6rem">
+      <span id="room-name-nav" style="font-size:.82rem;font-weight:700;color:var(--muted)"></span>
+      <button class="btn btn-outline btn-sm" onclick="copyRoomLink()">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Пригласить
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="leaveRoom()">Выйти</button>
+    </div>
+  </nav>
+  <div class="room-layout">
+    <!-- Player -->
+    <div class="player-area">
+      <div class="yt-wrap" id="yt-wrap">
+        <div class="no-video" id="no-video">
+          <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+          <p>Вставь ссылку на YouTube ниже</p>
+        </div>
+        <iframe id="yt-player" style="display:none" allow="autoplay" allowfullscreen></iframe>
+      </div>
+      <div class="player-controls">
+        <button class="ctrl-btn" id="btn-play" onclick="togglePlay()">
+          <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24" id="play-icon"><polygon points="5,3 19,12 5,21"/></svg>
+          <span id="play-label">Играть</span>
+        </button>
+        <div class="time-display" id="time-display">0:00</div>
+        <span style="font-size:.72rem;color:var(--muted)" id="sync-status"></span>
+      </div>
+      <div class="video-input-row">
+        <input id="yt-url-input" type="text" placeholder="Вставь ссылку YouTube: https://youtube.com/watch?v=..." onkeydown="if(event.key==='Enter')loadVideo()">
+        <button class="btn btn-primary btn-sm" onclick="loadVideo()">Загрузить</button>
+      </div>
+      <div class="reactions-bar">
+        <button class="react-btn" onclick="sendReaction('😂')">😂</button>
+        <button class="react-btn" onclick="sendReaction('😍')">😍</button>
+        <button class="react-btn" onclick="sendReaction('😱')">😱</button>
+        <button class="react-btn" onclick="sendReaction('👏')">👏</button>
+        <button class="react-btn" onclick="sendReaction('🔥')">🔥</button>
+        <button class="react-btn" onclick="sendReaction('💔')">💔</button>
+        <button class="react-btn" onclick="sendReaction('🤣')">🤣</button>
+      </div>
+      <div class="users-bar" id="users-bar"></div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-area">
+      <div class="chat-header">
+        <span class="chat-title">Чат</span>
+        <span class="user-count" id="user-count">0 онлайн</span>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <input id="chat-input" type="text" placeholder="Написать..." maxlength="300" onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="send-btn" onclick="sendChat()">
+          <svg width="14" height="14" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CREATE MODAL ── -->
+<div class="modal-overlay" id="modal-create" onclick="if(event.target===this)closeModal('create')">
+  <div class="modal">
+    <div class="modal-title">Создать комнату</div>
+    <div class="modal-sub">Придумай название и войди под своим именем</div>
+    <div class="form-group"><label class="form-label">Название комнаты</label><input class="form-input" id="create-room-name" placeholder="Sci-Fi пятница"></div>
+    <div class="form-group"><label class="form-label">Твоё имя</label><input class="form-input" id="create-user-name" placeholder="Арина" onkeydown="if(event.key==='Enter')createRoom()"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('create')">Отмена</button>
+      <button class="btn btn-primary" onclick="createRoom()">Создать →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── JOIN MODAL ── -->
+<div class="modal-overlay" id="modal-join" onclick="if(event.target===this)closeModal('join')">
+  <div class="modal">
+    <div class="modal-title">Войти в комнату</div>
+    <div class="modal-sub">Введи код комнаты и своё имя</div>
+    <div class="form-group"><label class="form-label">Код комнаты</label><input class="form-input" id="join-room-id" placeholder="abc12345"></div>
+    <div class="form-group"><label class="form-label">Твоё имя</label><input class="form-input" id="join-user-name" placeholder="Дима" onkeydown="if(event.key==='Enter')joinRoom()"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('join')">Отмена</button>
+      <button class="btn btn-primary" onclick="joinRoom()">Войти →</button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let socket = null;
+let myInfo = null;
+let currentRoom = null;
+let ytPlayer = null;
+let ytReady = false;
+let isSyncing = false; // prevent echo loops
+let playInterval = null;
+
+// ── SOCKET SETUP ──────────────────────────────────────────────────────────
+function connectSocket() {
+  if (socket) return;
+  socket = io();
+
+  socket.on('room_state', ({ room, you }) => {
+    myInfo = you;
+    currentRoom = room;
+    document.getElementById('room-name-nav').textContent = room.name;
+    document.getElementById('user-count').textContent = '1 онлайн';
+
+    // Restore chat
+    const msgs = document.getElementById('chat-messages');
+    msgs.innerHTML = '';
+    (room.chat || []).forEach(appendChatMsg);
+
+    // Load video if exists
+    if (room.video) loadYT(room.video.videoId, room.video.title);
+
+    showScreen('room');
+    document.getElementById('chat-input').focus();
+  });
+
+  socket.on('users_update', (users) => {
+    document.getElementById('user-count').textContent = users.length + ' онлайн';
+    renderUsers(users);
+  });
+
+  socket.on('user_joined', ({ user }) => appendSystemMsg(`${user.name} вошёл в комнату`));
+  socket.on('user_left', ({ user }) => appendSystemMsg(`${user.name} вышел`));
+
+  socket.on('video_changed', ({ video, state }) => {
+    currentRoom.video = video;
+    currentRoom.state = state;
+    if (video) loadYT(video.videoId, video.title);
+  });
+
+  socket.on('player_state', ({ playing, currentTime, from }) => {
+    if (!ytPlayer || !ytReady) return;
+    isSyncing = true;
+    const delta = Math.abs(ytPlayer.getCurrentTime() - currentTime);
+    if (delta > 1.5) ytPlayer.seekTo(currentTime, true);
+    if (playing) ytPlayer.playVideo(); else ytPlayer.pauseVideo();
+    updatePlayBtn(playing);
+    appendSystemMsg(`${from} ${playing ? '▶ запустил' : '⏸ поставил на паузу'}`);
+    setTimeout(() => isSyncing = false, 500);
+  });
+
+  socket.on('player_seek', ({ currentTime, from }) => {
+    if (!ytPlayer || !ytReady) return;
+    isSyncing = true;
+    ytPlayer.seekTo(currentTime, true);
+    appendSystemMsg(`${from} перемотал`);
+    setTimeout(() => isSyncing = false, 500);
+  });
+
+  socket.on('chat_message', appendChatMsg);
+
+  socket.on('reaction', ({ emoji, from }) => spawnReaction(emoji));
+
+  socket.on('error', ({ message }) => showToast('⚠ ' + message));
+}
+
+// ── ROOMS LIST ─────────────────────────────────────────────────────────────
+async function loadRooms() {
+  try {
+    const res = await fetch('/api/rooms');
+    const rooms = await res.json();
+    const grid = document.getElementById('rooms-grid');
+    if (!rooms.length) {
+      grid.innerHTML = '<div class="empty-rooms">Нет активных комнат. Создай первую!</div>';
+      return;
+    }
+    grid.innerHTML = rooms.map(r => `
+      <div class="room-card" onclick="quickJoin('${r.id}')">
+        <div class="rc-name">${esc(r.name)}</div>
+        <div class="rc-meta">
+          <div class="rc-dot"></div>
+          <span>${r.userCount} ${plural(r.userCount,'человек','человека','человек')}</span>
+          ${r.video ? `· <span>${esc(r.video.title)}</span>` : ''}
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('rooms-grid').innerHTML = '<div class="empty-rooms">Не удалось загрузить комнаты</div>';
+  }
+}
+
+function quickJoin(roomId) {
+  document.getElementById('join-room-id').value = roomId;
+  openModal('join');
+}
+
+// ── CREATE / JOIN ──────────────────────────────────────────────────────────
+async function createRoom() {
+  const name = document.getElementById('create-room-name').value.trim();
+  const userName = document.getElementById('create-user-name').value.trim();
+  if (!name) return showToast('Введи название комнаты');
+  if (!userName) return showToast('Введи своё имя');
+
+  try {
+    const res = await fetch('/api/rooms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, hostName: userName })
+    });
+    const { id } = await res.json();
+    closeModal('create');
+    enterRoom(id, userName);
+  } catch(e) { showToast('Ошибка создания комнаты'); }
+}
+
+function joinRoom() {
+  const roomId = document.getElementById('join-room-id').value.trim();
+  const userName = document.getElementById('join-user-name').value.trim();
+  if (!roomId) return showToast('Введи код комнаты');
+  if (!userName) return showToast('Введи своё имя');
+  closeModal('join');
+  enterRoom(roomId, userName);
+}
+
+function enterRoom(roomId, userName) {
+  connectSocket();
+  // Init YouTube API if not loaded
+  if (!window.YT) loadYTApi();
+  socket.emit('join_room', { roomId, userName });
+
+  // Store for reconnect
+  sessionStorage.setItem('wt_room', roomId);
+  sessionStorage.setItem('wt_user', userName);
+}
+
+function leaveRoom() {
+  if (socket) { socket.disconnect(); socket = null; }
+  ytPlayer = null; ytReady = false;
+  document.getElementById('yt-player').style.display = 'none';
+  document.getElementById('no-video').style.display = 'flex';
+  document.getElementById('chat-messages').innerHTML = '';
+  document.getElementById('users-bar').innerHTML = '';
+  sessionStorage.removeItem('wt_room');
+  sessionStorage.removeItem('wt_user');
+  showScreen('landing');
+  loadRooms();
+}
+
+// ── YOUTUBE API ────────────────────────────────────────────────────────────
+function loadYTApi() {
+  if (document.getElementById('yt-api-script')) return;
+  const s = document.createElement('script');
+  s.id = 'yt-api-script';
+  s.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
+}
+
+window.onYouTubeIframeAPIReady = function() {
+  console.log('YT API ready');
+};
+
+function loadYT(videoId, title) {
+  document.getElementById('no-video').style.display = 'none';
+  const iframe = document.getElementById('yt-player');
+  iframe.style.display = 'block';
+
+  if (!window.YT || !window.YT.Player) {
+    // YT API not loaded yet — use plain embed
+    iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=0&origin=${location.origin}`;
+    iframe.id = 'yt-player';
+    setupYTPlayer(videoId);
+    return;
+  }
+  setupYTPlayer(videoId);
+}
+
+function setupYTPlayer(videoId) {
+  if (ytPlayer) {
+    ytPlayer.loadVideoById(videoId);
+    return;
+  }
+  if (!window.YT || !window.YT.Player) {
+    // fallback: iframe embed
+    const iframe = document.getElementById('yt-player');
+    iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${location.origin}`;
+    ytReady = true;
+    return;
+  }
+  ytPlayer = new YT.Player('yt-player', {
+    videoId,
+    playerVars: { autoplay: 0, controls: 1, rel: 0, modestbranding: 1 },
+    events: {
+      onReady: () => { ytReady = true; startTimeTracker(); },
+      onStateChange: onYTStateChange
+    }
+  });
+}
+
+function onYTStateChange(e) {
+  if (isSyncing || !currentRoom) return;
+  const playing = e.data === YT.PlayerState.PLAYING;
+  const paused = e.data === YT.PlayerState.PAUSED;
+  if (playing || paused) {
+    socket.emit('player_state', {
+      roomId: currentRoom.id,
+      playing,
+      currentTime: ytPlayer.getCurrentTime()
+    });
+    updatePlayBtn(playing);
+  }
+}
+
+function togglePlay() {
+  if (!ytPlayer || !ytReady) return showToast('Сначала загрузи видео');
+  const state = ytPlayer.getPlayerState();
+  const isPlaying = state === 1;
+  if (isPlaying) ytPlayer.pauseVideo(); else ytPlayer.playVideo();
+  socket.emit('player_state', { roomId: currentRoom.id, playing: !isPlaying, currentTime: ytPlayer.getCurrentTime() });
+  updatePlayBtn(!isPlaying);
+}
+
+function updatePlayBtn(playing) {
+  document.getElementById('play-label').textContent = playing ? 'Пауза' : 'Играть';
+  document.getElementById('play-icon').innerHTML = playing
+    ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+    : '<polygon points="5,3 19,12 5,21"/>';
+}
+
+function startTimeTracker() {
+  clearInterval(playInterval);
+  playInterval = setInterval(() => {
+    if (!ytPlayer || !ytReady) return;
+    try {
+      const t = ytPlayer.getCurrentTime();
+      document.getElementById('time-display').textContent = formatTime(t);
+    } catch(e){}
+  }, 500);
+}
+
+// ── VIDEO LOAD ─────────────────────────────────────────────────────────────
+function loadVideo() {
+  const url = document.getElementById('yt-url-input').value.trim();
+  const videoId = extractYTId(url);
+  if (!videoId) return showToast('Неверная ссылка YouTube');
+  if (!currentRoom) return;
+
+  const title = url;
+  socket.emit('set_video', { roomId: currentRoom.id, video: { type: 'youtube', videoId, title: 'YouTube видео' } });
+  loadYT(videoId, 'YouTube видео');
+  document.getElementById('yt-url-input').value = '';
+
+  if (!window.YT) loadYTApi();
+}
+
+function extractYTId(url) {
+  const patterns = [
+    /(?:v=|youtu\.be\/|embed\/|shorts\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+// ── CHAT ───────────────────────────────────────────────────────────────────
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || !socket || !currentRoom) return;
+  socket.emit('chat_message', { roomId: currentRoom.id, text });
+  input.value = '';
+}
+
+function appendChatMsg(msg) {
+  const el = document.createElement('div');
+  el.className = 'chat-msg';
+  el.innerHTML = `<div class="chat-msg-user" style="color:${msg.color}">${esc(msg.userName)}</div><div class="chat-msg-text">${esc(msg.text)}</div>`;
+  const box = document.getElementById('chat-messages');
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+function appendSystemMsg(text) {
+  const el = document.createElement('div');
+  el.className = 'chat-system';
+  el.textContent = text;
+  const box = document.getElementById('chat-messages');
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── USERS ──────────────────────────────────────────────────────────────────
+function renderUsers(users) {
+  document.getElementById('users-bar').innerHTML = users.map(u =>
+    `<div class="user-chip"><div class="user-av" style="background:${u.color}">${u.name[0]}</div>${esc(u.name)}</div>`
+  ).join('');
+}
+
+// ── REACTIONS ─────────────────────────────────────────────────────────────
+function sendReaction(emoji) {
+  if (!socket || !currentRoom) return;
+  socket.emit('reaction', { roomId: currentRoom.id, emoji });
+  spawnReaction(emoji);
+}
+
+function spawnReaction(emoji) {
+  const el = document.createElement('div');
+  el.className = 'reaction-float';
+  el.textContent = emoji;
+  el.style.left = (20 + Math.random() * 60) + '%';
+  el.style.bottom = '120px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2100);
+}
+
+// ── MODALS ─────────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById('modal-' + id).classList.add('open'); }
+function closeModal(id) { document.getElementById('modal-' + id).classList.remove('open'); }
+
+// ── SCREENS ────────────────────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function copyRoomLink() {
+  if (!currentRoom) return;
+  const link = location.origin + '?room=' + currentRoom.id;
+  navigator.clipboard.writeText(link).then(() => showToast('Ссылка скопирована!'));
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2800);
+}
+
+function formatTime(s) {
+  s = Math.floor(s || 0);
+  const m = Math.floor(s / 60);
+  return m + ':' + String(s % 60).padStart(2,'0');
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function plural(n, one, few, many) {
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return n + ' ' + one;
+  if ([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return n + ' ' + few;
+  return n + ' ' + many;
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+loadRooms();
+setInterval(loadRooms, 15000);
+loadYTApi();
+
+// Auto-join from URL param
+const urlParams = new URLSearchParams(location.search);
+const urlRoom = urlParams.get('room');
+if (urlRoom) {
+  document.getElementById('join-room-id').value = urlRoom;
+  openModal('join');
+}
+</script>
+</body>
+</html>
