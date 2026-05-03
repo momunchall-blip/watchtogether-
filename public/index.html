@@ -69,8 +69,12 @@ h1 span{background:linear-gradient(120deg,var(--accent),var(--accent2) 50%,#00e5
 /* ── ROOM SCREEN ── */
 #screen-room{background:var(--bg)}
 .room-layout{flex:1;display:grid;grid-template-columns:1fr 300px;overflow:hidden;height:calc(100vh - 54px)}
-@media(max-width:680px){.room-layout{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
-
+@media(max-width:680px){
+  .room-layout{grid-template-columns:1fr;grid-template-rows:1fr auto;height:calc(100vh - 54px)}
+  .chat-area{height:40vh;min-height:200px;max-height:40vh}
+  .yt-wrap{max-height:30vh}
+  .reactions-bar{display:none}
+}
 .player-area{display:flex;flex-direction:column;overflow:hidden;background:#000}
 
 /* YouTube player */
